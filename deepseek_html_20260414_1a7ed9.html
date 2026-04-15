@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>Muhoro NMTC - Intelligent Learning Engine v5.0</title>
+    <link id="manifestLink" rel="manifest">
+    <meta name="theme-color" content="#d4a843">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NMTC LMS">
+    <meta name="description" content="Nyahururu Medical Training College - Production Learning Engine">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --navy: #0b1f3a; --navy2: #0f2847; --card: #162d4a; --card2: #1c3557; --gold: #d4a843; --white: #edeae0; --muted: #6b8caa; --danger: #e05252; --success: #3cba78; --border: rgba(212,168,67,0.2); --bg: var(--navy); --text: var(--white); }
+        body.light-mode { --bg: #f4f7f6; --navy2: #fff; --card: #fff; --card2: #f0f0f0; --text: #1a1a1a; --muted: #666; }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 280px; background: var(--navy2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .main { flex: 1; overflow-y: auto; padding: 30px; }
+        button, .nav-btn { width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; background: var(--gold); color: #000; margin-bottom: 8px; text-align: left; font-size: 13px; transition: 0.2s; }
+        button:hover, .nav-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .role-badge { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 11px; cursor: pointer; margin-bottom: 20px; border: 1px solid var(--gold); text-transform: uppercase; }
+        .role-admin { background: var(--gold); color: #000; }
+        .role-student { background: transparent; color: var(--gold); }
+        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; cursor: pointer; transition: 0.2s; }
+        .card[draggable="true"]:active { cursor: grabbing; }
+        .card[draggable="true"]:hover { background: var(--card2); border-color: var(--gold); }
+        .section-card { background: var(--card2); border-left: 4px solid var(--gold); margin-bottom: 25px; padding: 20px; border-radius: 12px; }
+        .progress-container { background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { background: var(--gold); height: 100%; transition: width 0.5s ease; }
+        .difficulty-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-left: 10px; font-weight: bold; }
+        .diff-easy { background: var(--success); color: #fff; }
+        .diff-medium { background: var(--gold); color: #000; }
+        .diff-hard { background: var(--danger); color: #fff; }
+        .edit-btn { background: var(--gold); color: #000; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; display: inline-block; width: auto; margin-right: 5px; }
+        .delete-btn { background: var(--danger); color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; display: inline-block; width: auto; }
+        .ai-btn { background: linear-gradient(135deg, #10a37f, #1a7f64); color: white; }
+        #loginOverlay { position: fixed; inset: 0; background: var(--navy); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .hidden { display: none !important; }
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--success); color: #fff; padding: 12px 25px; border-radius: 30px; font-size: 13px; font-weight: bold; z-index: 10000; transition: 0.4s; opacity: 0; }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .inline-buttons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--navy2); color: var(--text); }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 18px; width: 100%; max-width: 850px; border: 1px solid var(--gold); max-height: 85vh; overflow-y: auto; }
+        .explanation-box { background: rgba(60,186,120,0.1); border-left: 3px solid var(--success); padding: 12px; margin-top: 15px; border-radius: 8px; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
+        .video-card { background: var(--navy2); border-radius: 12px; overflow: hidden; padding: 15px; position: relative; }
+        .video-card img { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; }
+        .video-play-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(212,168,67,0.85); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-size: 20px; pointer-events: none; }
+        .offline-banner { position: fixed; top: 0; left: 0; right: 0; background: #e05252; color: white; text-align: center; padding: 4px; font-size: 11px; font-weight: bold; z-index: 10001; transform: translateY(-100%); transition: 0.2s; }
+        .offline-banner.show { transform: translateY(0); }
+        .notes-textarea { width: 100%; min-height: 120px; resize: vertical; background: var(--navy2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+        .dev-footer { padding: 18px 20px; border-top: 1px solid var(--border); margin-top: auto; font-size: 11px; color: var(--muted); }
+        .dev-footer a { color: var(--gold); text-decoration: none; }
+        .profile-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--card2); border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden; cursor: pointer; position: relative; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .objectives-rich-box { background: var(--navy2); border-radius: 12px; padding: 20px; margin-top: 10px; border-left: 4px solid var(--gold); }
+        .ql-container { min-height: 180px; background: var(--navy2); color: var(--text); }
+        .ql-toolbar { background: var(--card2); border-color: var(--border); }
+        .ql-editor { color: var(--text); }
+        .file-resource { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .download-btn { background: var(--gold); color: #000; padding: 6px 12px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; }
+        input, textarea { font-size: 16px; }
+        #subtopicList .card[draggable="true"] { cursor: grab; user-select: none; }
+        #subtopicList .card[draggable="true"]:active { cursor: grabbing; }
+        .support-email { font-size: 11px; color: var(--gold); margin-top: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+    </style>
+</head>
+<body>
+<div id="offlineBanner" class="offline-banner">📡 You are offline — changes will sync when connection returns</div>
+<div id="toast"></div>
+<div id="loginOverlay"><div style="background: var(--card); padding: 40px; border-radius: 20px; width: 340px; text-align: center;"><h2 style="font-family: 'Playfair Display'; color: var(--gold);">Muhoro NMTC</h2><p style="font-size: 12px; margin: 20px 0;">Select your role or enter Admin PIN</p><button onclick="selectRole('student')" style="text-align: center;">🎓 Continue as Student</button><button onclick="showAdminLogin()" style="margin-top: 10px; text-align: center; background: var(--card2); color: var(--text);">👑 Admin Access</button><div id="adminPinSection" style="display: none; margin-top: 15px;"><input type="password" id="adminPinInput" placeholder="Enter PIN" maxlength="6" style="text-align: center;"><button onclick="verifyAdminPin()">Verify</button></div></div></div>
+<aside class="sidebar"><div id="roleDisplay" class="role-badge role-student" onclick="toggleRoleMenu()">🎓 Student Mode</div><div style="text-align: center; margin-bottom: 25px;"><div class="profile-avatar" id="profileAvatarBtn" onclick="document.getElementById('profilePicInput').click()"><span id="profileAvatarIcon">👤</span><img id="profileAvatarImg" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;"></div><input type="file" id="profilePicInput" accept="image/*" style="display:none" onchange="handleProfilePic(this)"><div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;"><div id="userNameDisplay" style="font-weight:bold;cursor:pointer;" onclick="editUserName()">Student User</div><span onclick="editUserName()" style="cursor:pointer;font-size:11px;color:var(--gold);">✏️</span></div><div id="roleText" style="font-size: 11px; color: var(--gold);">Student</div></div><div class="search-box"><span class="search-icon">🔍</span><input type="text" id="globalSearchInput" placeholder="Search..." onkeyup="if(event.key==='Enter')performSearch(this.value)"></div><button onclick="navigateTo('dashboard')">📊 Dashboard</button><button onclick="navigateTo('courses')">📚 My Courses</button><button onclick="navigateTo('analytics')" id="analyticsBtn" style="display: none;">📈 Analytics</button><div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border);"><button onclick="toggleTheme()" style="background: var(--card2); color: var(--text);">🌓 Toggle Theme</button><button onclick="logout()" style="background: #3a1515; color: var(--danger);">Logout</button></div><div class="dev-footer"><div class="dev-name">🛠️ Lead Dev: J. Muhoro</div><div>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e18c948988808b8e898fff8a8d8f818980">[email&#160;protected]</a></div><div class="support-email">✉️ Support: <strong>muhiajohn8@gmail.com</strong></div><div style="margin-top:5px;color:var(--muted);font-size:10px;">NMTC LMS v5.0 | Production Ready</div></div></aside>
+<main class="main" id="mainContent"></main>
+<div id="genericModal" class="modal"><div class="modal-content" id="genericModalContent"></div></div>
+
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    
+    // ======================= INDEXEDDB (unlimited storage) =======================
+    const DB_NAME = 'NMTC_LMS_DB';
+    const DB_VERSION = 3;
+    const STORE_COURSES = 'courses';
+    const STORE_PROGRESS = 'progress';
+    const STORE_BLOBS = 'blobs';
+    let db = null;
+    let courses = [];
+    let userProgress = { lastState: null, subtopicScores: {}, notes: {} };
+    let saveDebounceTimer = null;
+    
+    function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror = () => reject(r.error); r.onsuccess = () => { db = r.result; resolve(db); }; r.onupgradeneeded = (e) => { const db = e.target.result; if (!db.objectStoreNames.contains(STORE_COURSES)) db.createObjectStore(STORE_COURSES, { keyPath: 'id' }); if (!db.objectStoreNames.contains(STORE_PROGRESS)) db.createObjectStore(STORE_PROGRESS, { keyPath: 'id' }); if (!db.objectStoreNames.contains(STORE_BLOBS)) db.createObjectStore(STORE_BLOBS, { keyPath: 'id' }); }; }); }
+    async function saveCoursesToDB(coursesData) { if (!db) await openDB(); const tx = db.transaction(STORE_COURSES, 'readwrite'); const store = tx.objectStore(STORE_COURSES); store.clear(); coursesData.forEach(c => store.put(c)); return tx.complete; }
+    async function loadCoursesFromDB() { if (!db) await openDB(); const tx = db.transaction(STORE_COURSES, 'readonly'); const store = tx.objectStore(STORE_COURSES); return new Promise((resolve) => { const r = store.getAll(); r.onsuccess = () => resolve(r.result || []); r.onerror = () => resolve([]); }); }
+    async function saveProgressToDB(progress) { if (!db) await openDB(); const tx = db.transaction(STORE_PROGRESS, 'readwrite'); const store = tx.objectStore(STORE_PROGRESS); store.put({ id: 'userProgress', data: progress }); return tx.complete; }
+    async function loadProgressFromDB() { if (!db) await openDB(); const tx = db.transaction(STORE_PROGRESS, 'readonly'); const store = tx.objectStore(STORE_PROGRESS); return new Promise((resolve) => { const r = store.get('userProgress'); r.onsuccess = () => resolve(r.result?.data || { lastState: null, subtopicScores: {}, notes: {} }); r.onerror = () => resolve({ lastState: null, subtopicScores: {}, notes: {} }); }); }
+    async function saveBlob(id, data) { if (!db) await openDB(); const tx = db.transaction(STORE_BLOBS, 'readwrite'); const store = tx.objectStore(STORE_BLOBS); store.put({ id, data }); return tx.complete; }
+    async function loadBlob(id) { if (!db) await openDB(); const tx = db.transaction(STORE_BLOBS, 'readonly'); const store = tx.objectStore(STORE_BLOBS); return new Promise((resolve) => { const r = store.get(id); r.onsuccess = () => resolve(r.result?.data || null); r.onerror = () => resolve(null); }); }
+    async function debouncedSave() { if (saveDebounceTimer) clearTimeout(saveDebounceTimer); saveDebounceTimer = setTimeout(async () => { await saveCoursesToDB(courses); await saveProgressToDB(userProgress); }, 500); }
+    async function saveAllData() { await debouncedSave(); }
+    
+    function uuid() { return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9); }
+    function showToast(msg, isError = false) { const t = document.getElementById('toast'); t.textContent = msg; t.style.background = isError ? 'var(--danger)' : 'var(--success)'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+    
+    function findCourse(id) { return courses.find(c => c.id === id); }
+    function findTopic(courseId, topicId) { const c = findCourse(courseId); return c?.topics.find(t => t.id === topicId); }
+    function findSubtopic(courseId, topicId, subtopicId) { const t = findTopic(courseId, topicId); return t?.subtopics.find(s => s.id === subtopicId); }
+    function getCurrentSubtopic() { return findSubtopic(currentCourseId, currentTopicId, currentSubtopicId); }
+    function initSubtopicProgress(subtopicId) { if (!userProgress.subtopicScores) userProgress.subtopicScores = {}; if (!userProgress.subtopicScores[subtopicId]) userProgress.subtopicScores[subtopicId] = { pretestCompleted: false, pretestScore: 0, contentViewed: false, videosViewed: false, posttestCompleted: false, posttestScore: 0, posttestAttempts: 0, masteryLevel: "none", weakAreas: [] }; return userProgress.subtopicScores[subtopicId]; }
+    
+    let currentUser = { role: 'student', username: 'Student' };
+    let currentView = 'dashboard', currentCourseId = null, currentTopicId = null, currentSubtopicId = null;
+    let activeQuiz = null;
+    let mainContentElement = document.getElementById('mainContent');
+    let quillEditor = null;
+    let noteDebounceTimer = null;
+    
+    // ======================= YOUTUBE THUMBNAIL =======================
+    function extractYouTubeId(url) { const m = url.match(/(?:youtube\.com\/.*v=|youtu\.be\/)([^&?]+)/); return m ? m[1] : null; }
+    function getYouTubeThumbnail(url) { const videoId = extractYouTubeId(url); return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : ''; }
+    
+    // ======================= ADMIN SECURITY =======================
+    async function hashPin(pin) { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin)); return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
+    async function changeAdminPin() {
+        const currentPin = prompt("Enter current PIN to authorize change:");
+        if (!currentPin) return;
+        const currentHash = await hashPin(currentPin);
+        const storedHash = localStorage.getItem('nmtc_admin_hash') || '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4';
+        if (currentHash === storedHash) {
+            const newPin = prompt("Enter new PIN (min 4 digits):");
+            if (newPin && newPin.length >= 4) {
+                const newHash = await hashPin(newPin);
+                localStorage.setItem('nmtc_admin_hash', newHash);
+                showToast("Admin PIN updated successfully!");
+            } else showToast("PIN must be at least 4 digits", true);
+        } else showToast("Incorrect current PIN", true);
+    }
+    
+    function renderAdminSettings() {
+        return `<div class="section-card"><h3>⚙️ Admin Security</h3><p style="font-size:12px;">Support Email: <strong>muhiajohn8@gmail.com</strong></p><button onclick="changeAdminPin()">🔐 Change Admin PIN</button></div>`;
+    }
+    
+    // ======================= DRAG & DROP =======================
+    let draggedItem = null;
+    function enableSubtopicDragging() {
+        const list = document.getElementById('subtopicList');
+        if (!list || currentUser.role !== 'admin') return;
+        const cards = list.querySelectorAll('.card');
+        cards.forEach(card => {
+            card.setAttribute('draggable', 'true');
+            card.removeEventListener('dragstart', dragStartHandler);
+            card.removeEventListener('dragend', dragEndHandler);
+            card.addEventListener('dragstart', dragStartHandler);
+            card.addEventListener('dragend', dragEndHandler);
+        });
+        list.removeEventListener('dragover', dragOverHandler);
+        list.removeEventListener('drop', dropHandler);
+        list.addEventListener('dragover', dragOverHandler);
+        list.addEventListener('drop', dropHandler);
+    }
+    function dragStartHandler(e) { draggedItem = e.target.closest('.card'); e.dataTransfer.setData('text/plain', draggedItem?.dataset?.id || ''); draggedItem.style.opacity = '0.5'; }
+    function dragEndHandler(e) { if (draggedItem) draggedItem.style.opacity = '1'; draggedItem = null; }
+    function dragOverHandler(e) { e.preventDefault(); }
+    async function dropHandler(e) {
+        e.preventDefault();
+        const targetCard = e.target.closest('.card');
+        if (!targetCard || !draggedItem || draggedItem === targetCard) return;
+        const draggedId = draggedItem.dataset.id;
+        const targetId = targetCard.dataset.id;
+        const topic = findTopic(currentCourseId, currentTopicId);
+        if (!topic) return;
+        const draggedIdx = topic.subtopics.findIndex(s => s.id === draggedId);
+        const targetIdx = topic.subtopics.findIndex(s => s.id === targetId);
+        if (draggedIdx === -1 || targetIdx === -1) return;
+        const [removed] = topic.subtopics.splice(draggedIdx, 1);
+        topic.subtopics.splice(targetIdx, 0, removed);
+        await saveAllData();
+        renderSubtopics();
+        showToast("Subtopic reordered");
+    }
+    
+    // ======================= NAVIGATION =======================
+    function navigateTo(view, courseId = null, topicId = null, subtopicId = null) { if (activeQuiz && !confirm('Leave quiz?')) return; currentView = view; currentCourseId = courseId; currentTopicId = topicId; currentSubtopicId = subtopicId; activeQuiz = null; saveSessionState(); renderCurrentView(); }
+    function goBack() { if (activeQuiz && !confirm('Exit quiz?')) return; if (currentView === 'learn') navigateTo('subtopics', currentCourseId, currentTopicId); else if (currentView === 'subtopics') navigateTo('topics', currentCourseId); else if (currentView === 'topics') navigateTo('courses'); else navigateTo('dashboard'); }
+    function saveSessionState() { if (currentCourseId && currentTopicId && currentSubtopicId && currentView !== 'quiz') userProgress.lastState = { courseId: currentCourseId, topicId: currentTopicId, subtopicId: currentSubtopicId }; if (activeQuiz && activeQuiz.type) sessionStorage.setItem('nmtc_active_quiz', JSON.stringify(activeQuiz)); else sessionStorage.removeItem('nmtc_active_quiz'); saveAllData(); }
+    async function restoreSession() { const savedQuiz = sessionStorage.getItem('nmtc_active_quiz'); if (savedQuiz) { activeQuiz = JSON.parse(savedQuiz); if (activeQuiz && activeQuiz.questions) renderQuiz(); else activeQuiz = null; } else if (userProgress.lastState && findSubtopic(userProgress.lastState.courseId, userProgress.lastState.topicId, userProgress.lastState.subtopicId)) { currentCourseId = userProgress.lastState.courseId; currentTopicId = userProgress.lastState.topicId; currentSubtopicId = userProgress.lastState.subtopicId; currentView = 'learn'; renderCurrentView(); } else renderCurrentView(); }
+    function autoSaveNote(value) { if (noteDebounceTimer) clearTimeout(noteDebounceTimer); noteDebounceTimer = setTimeout(() => { const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; if (!userProgress.notes) userProgress.notes = {}; userProgress.notes[subId] = value; saveAllData(); const ind = document.getElementById('noteSavedIndicator'); if (ind) { ind.style.display = 'block'; setTimeout(() => ind.style.display = 'none', 1500); } }, 800); }
+    
+    async function renderCurrentView() { if (!mainContentElement) return; if (currentView === 'dashboard') renderDashboard(); else if (currentView === 'courses') renderCourses(); else if (currentView === 'topics') renderTopics(); else if (currentView === 'subtopics') renderSubtopics(); else if (currentView === 'learn') renderLearnOnly(); else if (currentView === 'quiz') renderQuiz(); else if (currentView === 'analytics') renderAnalytics(); }
+    
+    function renderDashboard() { let total = 0, comp = 0; courses.forEach(c => c.topics.forEach(t => t.subtopics.forEach(s => { total++; if (userProgress.subtopicScores?.[`${c.id}_${t.id}_${s.id}`]?.pretestCompleted) comp++; }))); let html = `<h1>📊 Intelligent Dashboard</h1><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;"><div style="background:var(--card2);padding:20px;border-radius:12px;"><div style="font-size:36px;color:var(--gold);">${total}</div><div>Subtopics</div></div><div style="background:var(--card2);padding:20px;border-radius:12px;"><div style="font-size:36px;color:var(--gold);">${comp}</div><div>Pretests Done</div></div></div>`; if (userProgress.lastState) html += `<div class="card resume-session" onclick="openSubtopicInstant('${userProgress.lastState.courseId}','${userProgress.lastState.topicId}','${userProgress.lastState.subtopicId}')"><strong>🔄 Resume Last Session</strong></div>`; html += `<h3>📖 Your Courses</h3>${courses.map(c => `<div class="card" onclick="navigateTo('topics','${c.id}')"><b>📘 ${escapeHtml(c.name)}</b></div>`).join('')}`; if (currentUser.role === 'admin') html += `<button onclick="addCourse()">➕ Add Course</button>`; html += `<button onclick="goBack()" style="background:#555;">⬅ Back</button>`; mainContentElement.innerHTML = html; }
+    function renderCourses() { let html = `<h2>📚 All Courses</h2>`; courses.forEach(c => { html += `<div class="card" onclick="navigateTo('topics','${c.id}')"><h3>📘 ${escapeHtml(c.name)}</h3>${currentUser.role === 'admin' ? `<div class="inline-buttons"><button class="edit-btn" onclick="event.stopPropagation();editCourse('${c.id}')">✏️ Edit</button><button class="delete-btn" onclick="event.stopPropagation();deleteCourse('${c.id}')">🗑️ Delete</button></div>` : ''}</div>`; }); if (currentUser.role === 'admin') html += `<button onclick="addCourse()">➕ Add Course</button>`; html += `<button onclick="goBack()" style="background:#555;">⬅ Back</button>`; mainContentElement.innerHTML = html; }
+    function renderTopics() { const course = findCourse(currentCourseId); if (!course) { navigateTo('courses'); return; } let html = `<h2>📖 ${escapeHtml(course.name)} — Topics</h2>`; course.topics.forEach(t => { html += `<div class="card" onclick="navigateTo('subtopics','${currentCourseId}','${t.id}')"><h3>📌 ${escapeHtml(t.name)}</h3><small>${t.subtopics.length} subtopics</small>${currentUser.role === 'admin' ? `<div class="inline-buttons"><button class="edit-btn" onclick="event.stopPropagation();editTopic('${currentCourseId}','${t.id}')">✏️ Edit</button><button class="delete-btn" onclick="event.stopPropagation();deleteTopic('${currentCourseId}','${t.id}')">🗑️ Delete</button></div>` : ''}</div>`; }); if (currentUser.role === 'admin') html += `<button onclick="addTopic('${currentCourseId}')">➕ Add Topic</button>`; html += `<button onclick="goBack()" style="background:#555;">⬅ Back</button>`; mainContentElement.innerHTML = html; }
+    
+    function renderSubtopics() { const topic = findTopic(currentCourseId, currentTopicId); if (!topic) { navigateTo('topics', currentCourseId); return; } let html = `<h2>📂 ${escapeHtml(topic.name)} — Subtopics</h2><p style="font-size:12px;color:var(--gold);margin-bottom:10px;">${currentUser.role === 'admin' ? '✨ Drag and drop to reorder' : ''}</p><div id="subtopicList">`; topic.subtopics.forEach((s, idx) => { const subId = `${currentCourseId}_${currentTopicId}_${s.id}`; let prog = initSubtopicProgress(subId); let statusMsg = prog.masteryLevel === 'high' ? '🏆' : prog.pretestCompleted ? '📚' : '🔒'; html += `<div class="card" data-id="${s.id}" onclick="openSubtopicInstant('${currentCourseId}','${currentTopicId}','${s.id}')" style="cursor:pointer;"><div style="display:flex;justify-content:space-between;align-items:center;"><span><span style="cursor:grab;margin-right:10px;">⠿</span> <b>🎯 ${escapeHtml(s.name)}</b> <span style="font-size:11px;">${statusMsg}</span></span>${currentUser.role === 'admin' ? `<div class="inline-buttons" style="margin:0;"><button class="edit-btn" onclick="event.stopPropagation();editSubtopic('${currentCourseId}','${currentTopicId}','${s.id}')">✏️</button><button class="delete-btn" onclick="event.stopPropagation();deleteSubtopic('${currentCourseId}','${currentTopicId}','${s.id}')">🗑️</button></div>` : ''}</div><div class="progress-container"><div class="progress-bar" style="width: ${prog.posttestScore || 0}%"></div></div></div>`; }); html += `</div>`; if (currentUser.role === 'admin') html += `<button onclick="addSubtopic('${currentCourseId}','${currentTopicId}')">➕ Add Subtopic</button>`; html += `<button onclick="goBack()" style="background:#555;">⬅ Back</button>`; mainContentElement.innerHTML = html; setTimeout(() => enableSubtopicDragging(), 100); }
+    
+    function openSubtopicInstant(courseId, topicId, subtopicId) { activeQuiz = null; currentCourseId = courseId; currentTopicId = topicId; currentSubtopicId = subtopicId; currentView = 'learn'; saveSessionState(); renderLearnOnly(); }
+    
+    async function renderLearnOnly() { const s = getCurrentSubtopic(); if (!s) { navigateTo('subtopics', currentCourseId, currentTopicId); return; } const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; let prog = initSubtopicProgress(subId); const isAdmin = currentUser.role === 'admin'; let html = `<h2>📘 ${escapeHtml(s.name)}</h2><div class="section-card"><h3>📝 Pretest</h3>${!prog.pretestCompleted || isAdmin ? `<button onclick="startPretest()">▶ Start Pretest</button>` : `<p>✅ Score: ${prog.pretestScore}%</p><button onclick="startPretest()">🔄 Retake</button>`}</div>`; if (prog.pretestCompleted || isAdmin) html += `<div class="section-card"><h3>🎯 Learning Objectives</h3><div class="objectives-rich-box">${s.learningObjectives || "<p>By the end of the session, the learner should be able to:</p><ul><li>...</li></ul>"}</div>${isAdmin ? `<button class="edit-btn" onclick="openObjectivesEditor()">✏️ Edit Rich Objectives</button>` : ''}<button onclick="markObjectivesViewed()">✅ I understand</button></div><div class="section-card"><h3>📖 Core Content</h3><div class="objectives-box"><p>${escapeHtml(s.content || 'No content')}</p></div>${isAdmin ? `<button class="edit-btn" onclick="editContent()">✏️ Edit Text</button><button class="edit-btn" onclick="uploadResourceFile()">📎 Upload Resource</button>` : ''}<div id="resourcesList"></div><button onclick="markContentRead()">✅ Mark Read</button></div>`; if (s.resources && s.resources.length) { let resHtml = `<h4>📁 Resources:</h4>`; s.resources.forEach((r, idx) => { resHtml += `<div class="file-resource"><span>📄 ${escapeHtml(r.name)}</span><div><a class="download-btn" onclick="downloadResource('${r.data}', '${escapeHtml(r.name)}')">⬇️ Download</a>${isAdmin ? `<button class="delete-btn" onclick="deleteResource(${idx})">🗑️</button>` : ''}</div></div>`; }); html = html.replace('<div id="resourcesList"></div>', resHtml); } else html = html.replace('<div id="resourcesList"></div>', ''); if (prog.pretestCompleted || isAdmin) { let videoHtml = ''; if (s.videos && s.videos.length) { videoHtml = `<div class="video-grid">${s.videos.map(v => { const thumb = getYouTubeThumbnail(v.url); const vidId = extractYouTubeId(v.url); return `<div class="video-card"><div style="position:relative;"><img src="${thumb}" onerror="this.src='https://img.youtube.com/vi/${vidId}/hqdefault.jpg'" style="width:100%;"><div class="video-play-overlay">▶</div></div><p style="font-size:12px;margin-top:8px;">${escapeHtml(v.title || 'YouTube Video')}</p><a href="${v.url}" target="_blank" class="download-btn" style="display:block;text-align:center;">Watch on YouTube</a></div>`; }).join('')}</div>`; } html += `<div class="section-card"><h3>🎥 Videos</h3>${videoHtml || '<p>No videos added yet.</p>'}${isAdmin ? `<button class="edit-btn" onclick="openBulkVideoModal()">📋 Bulk Add Videos</button>` : ''}</div><div class="section-card"><h3>📈 Posttest</h3><p>Best: ${prog.posttestScore || 0}%</p><button onclick="startPosttest()">Start Posttest</button></div>`; } if (currentUser.role !== 'admin') html += `<div class="section-card"><h3>📝 My Notes</h3><textarea class="notes-textarea" id="studentNotepad" oninput="autoSaveNote(this.value)">${escapeHtml((userProgress.notes?.[subId]) || '')}</textarea><div id="noteSavedIndicator" style="font-size:11px;color:var(--success);display:none;">✅ Saved</div></div>`; if (isAdmin) html += renderAdminSettings() + `<div class="section-card"><h3>📋 Question Bank (${s.questions.length})</h3><button onclick="openMcqParser()">📝 Manual Parser</button><button onclick="addManualQuestion()">➕ Add MCQ</button></div>`; html += `<button onclick="goBack()">⬅ Back</button>`; mainContentElement.innerHTML = html; }
+    
+    // Quiz logic
+    function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+    function prepareQuestions(pool) { return shuffleArray(pool).map(q => { const tagged = q.options.map((t, i) => ({ text: t, correct: i === q.correct })); const shuffled = shuffleArray(tagged); return { ...q, options: shuffled.map(o => o.text), correct: shuffled.findIndex(o => o.correct) }; }); }
+    function startPretest() { const qs = getCurrentSubtopic()?.questions || []; if (!qs.length) { showToast('No questions. Admin can add via parser.', true); return; } let pool = qs.filter(q => q.difficulty === 'easy' || q.difficulty === 'medium'); if (pool.length < 3) pool = qs; activeQuiz = { type: 'pretest', questions: prepareQuestions(pool).slice(0, 10), currentIndex: 0, score: 0, userAnswers: [] }; renderQuiz(); }
+    function startPosttest() { const qs = getCurrentSubtopic()?.questions || []; if (!qs.length) { showToast('No questions in bank', true); return; } activeQuiz = { type: 'posttest', questions: prepareQuestions(qs).slice(0, 50), currentIndex: 0, score: 0, userAnswers: [] }; renderQuiz(); }
+    function renderQuiz() { if (!activeQuiz || activeQuiz.currentIndex >= activeQuiz.questions.length) { finishQuiz(); return; } const q = activeQuiz.questions[activeQuiz.currentIndex]; const isAnswered = activeQuiz.userAnswers[activeQuiz.currentIndex] !== undefined; let html = `<div style="display:flex;justify-content:space-between;"><button onclick="confirmExitQuiz()" style="background:#555;width:auto;">✖ Exit</button><span>Q${activeQuiz.currentIndex + 1}/${activeQuiz.questions.length}</span><span class="score-badge">✓ ${activeQuiz.score}</span></div><div class="card"><h3>${escapeHtml(q.text)}</h3>${q.options.map((opt, idx) => `<button class="nav-btn" onclick="submitAnswer(${idx})" ${isAnswered ? 'disabled' : ''} style="${isAnswered && idx === q.correct ? 'background:var(--success)' : isAnswered && idx === activeQuiz.userAnswers[activeQuiz.currentIndex] ? 'background:var(--danger)' : ''}">${String.fromCharCode(65 + idx)}. ${escapeHtml(opt)}</button>`).join('')}${isAnswered ? `<div class="explanation-box">💡 ${escapeHtml(q.explanation || '')}<br>Your: ${String.fromCharCode(65 + activeQuiz.userAnswers[activeQuiz.currentIndex])} | Correct: ${String.fromCharCode(65 + q.correct)}</div><button onclick="nextQuestion()">Next →</button>` : ''}</div>`; mainContentElement.innerHTML = html; }
+    function submitAnswer(idx) { if (activeQuiz && activeQuiz.userAnswers[activeQuiz.currentIndex] === undefined) { activeQuiz.userAnswers[activeQuiz.currentIndex] = idx; if (idx === activeQuiz.questions[activeQuiz.currentIndex].correct) activeQuiz.score++; renderQuiz(); } }
+    function nextQuestion() { activeQuiz.currentIndex++; if (activeQuiz.currentIndex < activeQuiz.questions.length) renderQuiz(); else finishQuiz(); }
+    async function finishQuiz() { const percent = Math.round((activeQuiz.score / activeQuiz.questions.length) * 100); const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; let p = initSubtopicProgress(subId); if (activeQuiz.type === 'pretest') { p.pretestCompleted = true; p.pretestScore = percent; await saveAllData(); showToast('Pretest done!'); navigateTo('learn', currentCourseId, currentTopicId, currentSubtopicId); } else { p.posttestCompleted = true; p.posttestScore = percent; p.posttestAttempts = (p.posttestAttempts || 0) + 1; p.masteryLevel = percent >= 80 ? 'high' : percent >= 60 ? 'medium' : 'low'; await saveAllData(); showToast(percent >= 60 ? `Passed! ${percent}%` : `Score: ${percent}%`, percent < 60); navigateTo('learn', currentCourseId, currentTopicId, currentSubtopicId); } activeQuiz = null; saveSessionState(); }
+    function confirmExitQuiz() { if (confirm('Exit quiz?')) { activeQuiz = null; renderCurrentView(); } }
+    
+    // Admin helpers
+    function addCourse() { showPrompt("Course Name", "", async (n) => { if (n) { courses.push({ id: uuid(), name: n, topics: [] }); await saveAllData(); renderCurrentView(); } }); }
+    function editCourse(id) { let c = findCourse(id); showPrompt("Edit Course", c.name, async (n) => { if (n) { c.name = n; await saveAllData(); renderCurrentView(); } }); }
+    async function deleteCourse(id) { showConfirm("Delete", "Delete course?", async () => { courses = courses.filter(c => c.id !== id); await saveAllData(); navigateTo('courses'); }); }
+    function addTopic(cid) { showPrompt("Topic Name", "", async (n) => { if (n) { let c = findCourse(cid); c.topics.push({ id: uuid(), name: n, subtopics: [] }); await saveAllData(); renderCurrentView(); } }); }
+    function editTopic(cid, tid) { let t = findTopic(cid, tid); showPrompt("Edit Topic", t.name, async (n) => { if (n) { t.name = n; await saveAllData(); renderCurrentView(); } }); }
+    async function deleteTopic(cid, tid) { showConfirm("Delete Topic", "Delete?", async () => { let c = findCourse(cid); c.topics = c.topics.filter(t => t.id !== tid); await saveAllData(); renderCurrentView(); }); }
+    function addSubtopic(cid, tid) { showPrompt("Subtopic Name", "", async (n) => { if (n) { let t = findTopic(cid, tid); t.subtopics.push({ id: uuid(), name: n, learningObjectives: "<p>By the end of the session, the learner should be able to:</p><ul><li>...</li></ul>", content: "", videos: [], resources: [], questions: [] }); await saveAllData(); renderCurrentView(); } }); }
+    function editSubtopic(cid, tid, sid) { let s = findSubtopic(cid, tid, sid); showPrompt("Edit Name", s.name, async (n) => { if (n) { s.name = n; await saveAllData(); renderCurrentView(); } }); }
+    async function deleteSubtopic(cid, tid, sid) { showConfirm("Delete Subtopic", "Delete?", async () => { let t = findTopic(cid, tid); t.subtopics = t.subtopics.filter(s => s.id !== sid); await saveAllData(); renderCurrentView(); }); }
+    function editContent() { let s = getCurrentSubtopic(); showPrompt("Edit Content", s.content || "", async (txt) => { if (txt !== null) { s.content = txt; await saveAllData(); renderLearnOnly(); } }); }
+    function showModal(title, bodyHtml, onConfirm, confirmText = "OK", cancelText = "Cancel") { const modalDiv = document.getElementById('genericModal'); const contentDiv = document.getElementById('genericModalContent'); contentDiv.innerHTML = `<h3 style="color:var(--gold);margin-bottom:15px;">${escapeHtml(title)}</h3>${bodyHtml}<div class="inline-buttons" style="margin-top:20px;justify-content:flex-end;"><button id="modalConfirmBtn" style="width:auto;">${escapeHtml(confirmText)}</button><button id="modalCancelBtn" style="width:auto;background:#555;">${escapeHtml(cancelText)}</button></div>`; modalDiv.style.display = 'flex'; document.getElementById('modalConfirmBtn').onclick = () => { modalDiv.style.display = 'none'; if (onConfirm) onConfirm(); }; document.getElementById('modalCancelBtn').onclick = () => { modalDiv.style.display = 'none'; }; }
+    function showPrompt(title, defaultValue, callback) { showModal(title, `<input type="text" id="modalPromptInput" value="${escapeHtml(defaultValue)}" style="width:100%;">`, () => callback(document.getElementById('modalPromptInput').value), "Save", "Cancel"); }
+    function showConfirm(title, message, onYes) { showModal(title, `<p>${escapeHtml(message)}</p>`, onYes, "Yes", "Cancel"); }
+    function closeModal() { document.getElementById('genericModal').style.display = 'none'; }
+    function openObjectivesEditor() { const s = getCurrentSubtopic(); showModal("Edit Objectives", `<div id="richEditorContainer" style="min-height:250px;"></div>`, async () => { if (quillEditor) { s.learningObjectives = quillEditor.root.innerHTML; await saveAllData(); renderLearnOnly(); quillEditor = null; } }, "Save", "Cancel"); setTimeout(() => { const c = document.getElementById('richEditorContainer'); if (c) { quillEditor = new Quill(c, { theme: 'snow', modules: { toolbar: [['bold', 'italic'], [{ 'list': 'ordered' }, { 'list': 'bullet' }]] } }); quillEditor.root.innerHTML = s.learningObjectives || "<p>By the end of the session, the learner should be able to:</p><ul><li>...</li></ul>"; } }, 100); }
+    function openBulkVideoModal() { showModal("Bulk Videos", `<textarea id="bulkVideoUrls" rows="8" placeholder="https://youtu.be/abc123&#10;https://youtube.com/watch?v=def456 | Title"></textarea>`, () => { const lines = document.getElementById('bulkVideoUrls').value.split(/\r?\n/).filter(l => l.trim()); const videos = []; for (let line of lines) { let [url, title] = line.split('|'); url = url.trim(); const vid = extractYouTubeId(url); if (vid) videos.push({ url, title: title ? title.trim() : "YouTube Video" }); } if (!videos.length) { showToast("No valid URLs", true); return; } const s = getCurrentSubtopic(); if (!s) return; if (!s.videos) s.videos = []; s.videos.push(...videos); saveAllData(); renderLearnOnly(); showToast(`Added ${videos.length} videos`); closeModal(); }, "Import", "Cancel"); }
+    async function uploadResourceFile() { const input = document.createElement('input'); input.type = 'file'; input.accept = '.pdf,.docx,.pptx'; input.onchange = async (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (ev) => { const s = getCurrentSubtopic(); if (!s) return; if (!s.resources) s.resources = []; s.resources.push({ name: file.name, type: file.type, data: ev.target.result }); await saveAllData(); renderLearnOnly(); showToast(`File added: ${file.name}`); }; reader.readAsDataURL(file); }; input.click(); }
+    function downloadResource(dataUrl, filename) { const a = document.createElement('a'); a.href = dataUrl; a.download = filename; a.click(); }
+    async function deleteResource(idx) { showConfirm("Delete", "Remove?", async () => { const s = getCurrentSubtopic(); if (s && s.resources) { s.resources.splice(idx, 1); await saveAllData(); renderLearnOnly(); } }); }
+    function addManualQuestion() { let s = getCurrentSubtopic(); if (!s) return; showPrompt("Question", "", (text) => { if (!text) return; showPrompt("A", "", a => { showPrompt("B", "", b => { showPrompt("C", "", c => { showPrompt("D", "", d => { showPrompt("Correct (A/B/C/D)", "A", cor => { let idx = { A: 0, B: 1, C: 2, D: 3 }[cor.toUpperCase()]; showPrompt("Difficulty", "medium", diff => { showPrompt("Explanation", "", exp => { s.questions.push({ text, options: [a, b, c, d], correct: idx, difficulty: diff, explanation: exp }); saveAllData(); renderLearnOnly(); }); }); }); }); }); }); }); }); }
+    function openMcqParser() { showModal("Manual MCQ Parser", `<textarea id="rawMcqInput" rows="10" placeholder="1. Question?\nA) ...\nAnswer: A"></textarea><textarea id="jsonOutput" rows="5" readonly></textarea><div class="inline-buttons"><button onclick="parseAndCleanMCQs()">Parse</button><button onclick="importParsedQuestionsToBank()">Import</button></div>`, null, "Close", ""); document.getElementById('rawMcqInput').value = ""; }
+    function parseAndCleanMCQs() { const raw = document.getElementById('rawMcqInput')?.value; if (!raw) return; const lines = raw.split(/\r?\n/); let qs = []; let cur = null; for (let l of lines) { let qm = l.match(/^(\d+)\.\s*(.+)$/); if (qm) { if (cur && cur.options.A) qs.push(cur); cur = { question_text: qm[2], options: { A: "", B: "", C: "", D: "" }, correct_answer: "" }; continue; } let om = l.match(/^([A-D])\)\s*(.+)$/); if (om && cur) cur.options[om[1]] = om[2]; let am = l.match(/^Answer:\s*([A-D])/i); if (am && cur) cur.correct_answer = am[1]; } if (cur && cur.options.A) qs.push(cur); parsedQuestionsCache = qs; document.getElementById('jsonOutput').value = JSON.stringify(qs, null, 2); showToast(`Parsed ${qs.length} Qs`); }
+    let parsedQuestionsCache = [];
+    async function importParsedQuestionsToBank() { if (!parsedQuestionsCache.length) { showToast("Parse first", true); return; } let s = getCurrentSubtopic(); parsedQuestionsCache.forEach(pq => { s.questions.push({ text: pq.question_text, options: [pq.options.A, pq.options.B, pq.options.C, pq.options.D], correct: ["A", "B", "C", "D"].indexOf(pq.correct_answer), difficulty: "medium", explanation: "Imported" }); }); await saveAllData(); renderLearnOnly(); showToast(`Imported ${parsedQuestionsCache.length}`); closeModal(); }
+    function performSearch(q) { if (!q || q.length < 2) { showToast("2+ chars", true); return; } let results = []; courses.forEach(c => { c.topics.forEach(t => { t.subtopics.forEach(s => { if (s.name.toLowerCase().includes(q.toLowerCase())) results.push({ courseId: c.id, topicId: t.id, subtopicId: s.id, name: s.name }); }); }); }); let html = `<h2>🔎 Results</h2>`; results.forEach(r => { html += `<div class="card" onclick="openSubtopicInstant('${r.courseId}','${r.topicId}','${r.subtopicId}')"><strong>${escapeHtml(r.name)}</strong></div>`; }); html += `<button onclick="goBack()">Back</button>`; mainContentElement.innerHTML = html; }
+    function markObjectivesViewed() { const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; initSubtopicProgress(subId); saveAllData(); renderLearnOnly(); showToast("Objectives acknowledged"); }
+    function markContentRead() { const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; let p = initSubtopicProgress(subId); p.contentViewed = true; saveAllData(); renderLearnOnly(); showToast("Content marked"); }
+    function markVideoWatched() { const subId = `${currentCourseId}_${currentTopicId}_${currentSubtopicId}`; let p = initSubtopicProgress(subId); p.videosViewed = true; saveAllData(); renderLearnOnly(); showToast("Video marked"); }
+    function renderAnalytics() { if (currentUser.role !== 'admin') { navigateTo('dashboard'); return; } let total = 0, comp = 0; courses.forEach(c => c.topics.forEach(t => t.subtopics.forEach(s => { total++; if (userProgress.subtopicScores?.[`${c.id}_${t.id}_${s.id}`]?.pretestCompleted) comp++; }))); mainContentElement.innerHTML = `<h1>📈 Analytics</h1><div style="background:var(--card2);padding:20px;"><div style="font-size:48px;">${total ? Math.round((comp / total) * 100) : 0}%</div><div>Completion</div></div><button onclick="goBack()">Back</button>`; }
+    
+    // Profile & Auth
+    async function loadProfileData() { const picBlob = await loadBlob('profile_pic'); if (picBlob) { const url = URL.createObjectURL(picBlob); document.getElementById('profileAvatarImg').src = url; document.getElementById('profileAvatarImg').style.display = 'block'; document.getElementById('profileAvatarIcon').style.display = 'none'; } const name = localStorage.getItem('nmtc_profile_name'); if (name) document.getElementById('userNameDisplay').textContent = name; }
+    function handleProfilePic(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (e) => { const blob = await fetch(e.target.result).then(r => r.blob()); await saveBlob('profile_pic', blob); loadProfileData(); showToast('Photo updated'); }; reader.readAsDataURL(file); }
+    function editUserName() { const curr = document.getElementById('userNameDisplay').textContent; showPrompt("Your name", curr, n => { if (n) { localStorage.setItem('nmtc_profile_name', n); loadProfileData(); showToast('Name updated'); } }); }
+    async function verifyAdminPin() { const pin = document.getElementById('adminPinInput').value; if (!pin) return; const entered = await hashPin(pin); const stored = localStorage.getItem('nmtc_admin_hash') || '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; if (entered === stored) { currentUser.role = 'admin'; document.getElementById('loginOverlay').classList.add('hidden'); updateRoleUI(); renderCurrentView(); showToast('Admin Access'); } else showToast('Wrong PIN', true); }
+    function selectRole(role) { currentUser.role = role; document.getElementById('loginOverlay').classList.add('hidden'); updateRoleUI(); restoreSession(); showToast(`Welcome ${role}`); }
+    function updateRoleUI() { const rd = document.getElementById('roleDisplay'), rt = document.getElementById('roleText'), an = document.getElementById('analyticsBtn'); if (currentUser.role === 'admin') { rd.className = 'role-badge role-admin'; rd.innerHTML = '👑 Admin Mode'; rt.innerHTML = 'Admin'; if (an) an.style.display = 'block'; } else { rd.className = 'role-badge role-student'; rd.innerHTML = '🎓 Student Mode'; rt.innerHTML = 'Student'; if (an) an.style.display = 'none'; } }
+    function toggleRoleMenu() { if (currentUser.role === 'admin') { currentUser.role = 'student'; updateRoleUI(); renderCurrentView(); showToast('Student Mode'); } else document.getElementById('loginOverlay').classList.remove('hidden'); }
+    function showAdminLogin() { document.getElementById('adminPinSection').style.display = 'block'; }
+    function logout() { activeQuiz = null; currentUser.role = 'student'; currentView = 'dashboard'; currentCourseId = null; currentTopicId = null; currentSubtopicId = null; updateRoleUI(); renderCurrentView(); showToast('Logged out'); }
+    
+    // Bootstrap
+    (async function init() { await openDB(); courses = await loadCoursesFromDB(); if (!courses.length) courses = [{ id: uuid(), name: "Clinical Pharmacology", topics: [{ id: uuid(), name: "Antibiotics", subtopics: [{ id: uuid(), name: "Gentamicin Ototoxicity", learningObjectives: "<p>By the end of the session, the learner should be able to:</p><ul><li>Identify early signs of gentamicin-induced ototoxicity</li></ul>", content: "Gentamicin is an aminoglycoside antibiotic. Ototoxicity is a serious adverse effect.", videos: [], resources: [], questions: [{ text: "A patient on gentamicin reports hearing loss. What should the nurse do first?", options: ["Continue medication", "Report to provider", "Increase fluids", "Give antiemetic"], correct: 1, difficulty: "easy", explanation: "Ototoxicity requires immediate reporting." }] }] }] }]; userProgress = await loadProgressFromDB(); loadProfileData(); updateRoleUI(); restoreSession(); window.showModal = showModal; window.openSubtopicInstant = openSubtopicInstant; window.navigateTo = navigateTo; window.startPretest = startPretest; window.startPosttest = startPosttest; window.submitAnswer = submitAnswer; window.nextQuestion = nextQuestion; window.confirmExitQuiz = confirmExitQuiz; window.markObjectivesViewed = markObjectivesViewed; window.markContentRead = markContentRead; window.markVideoWatched = markVideoWatched; window.addCourse = addCourse; window.editCourse = editCourse; window.deleteCourse = deleteCourse; window.addTopic = addTopic; window.editTopic = editTopic; window.deleteTopic = deleteTopic; window.addSubtopic = addSubtopic; window.editSubtopic = editSubtopic; window.deleteSubtopic = deleteSubtopic; window.addManualQuestion = addManualQuestion; window.openMcqParser = openMcqParser; window.parseAndCleanMCQs = parseAndCleanMCQs; window.importParsedQuestionsToBank = importParsedQuestionsToBank; window.performSearch = performSearch; window.toggleTheme = toggleTheme; window.logout = logout; window.selectRole = selectRole; window.showAdminLogin = showAdminLogin; window.verifyAdminPin = verifyAdminPin; window.toggleRoleMenu = toggleRoleMenu; window.autoSaveNote = autoSaveNote; window.closeModal = closeModal; window.goBack = goBack; window.openObjectivesEditor = openObjectivesEditor; window.uploadResourceFile = uploadResourceFile; window.downloadResource = downloadResource; window.deleteResource = deleteResource; window.openBulkVideoModal = openBulkVideoModal; window.editContent = editContent; window.changeAdminPin = changeAdminPin; })();
+</script>
+</body>
+</html>
